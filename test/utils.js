@@ -42,6 +42,15 @@ describe('Cart.utils', function() {
       assert.notStrictEqual(Cart.utils.toArray(obj), obj);
       assert.notStrictEqual(Cart.utils.toArray(arguments), arguments);
     });
+
+    it('should optionally allow expanding single argument arrays into arguments', function() {
+      var argItem = new Cart.Item()
+        , args = [argItem]
+        , arrItem = new Cart.Item()
+        , arrArgs = [[arrItem]];
+      assert.strictEqual(Cart.utils.toArray(args)[0], argItem);
+      assert.strictEqual(Cart.utils.toArray(arrArgs, true)[0], arrItem);
+    });
   });
 });
 

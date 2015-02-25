@@ -65,18 +65,18 @@ describe('Item', function() {
       assert.strictEqual(item.property('name'), value);
       assert.strictEqual(item.property('description'), value2);
     });
-    it('should trigger change events', function(done) {
+    it('should trigger property:change events', function(done) {
       var value = 'hello'
         , value2 = 'world'
-        , item = new Item({ properties: { hello: value } });
-      item.on('change', function(property, v, prev) {
-        assert.strictEqual('hello', property);
+        , item = new Item({ properties: { the_key: value } });
+      item.on('property:change', function(property, v, prev) {
+        assert.strictEqual('the_key', property);
         assert.strictEqual(v, value2);
         assert.strictEqual(prev, value);
         done();
       });
-      assert.strictEqual(item.property('hello'), value);
-      item.property('hello', value2);
+      assert.strictEqual(item.property('the_key'), value);
+      item.property('the_key', value2);
     });
   });
 });

@@ -3,6 +3,11 @@
 <head>
   <title></title>
   <script src="STRIPE_PUBLISHABLE_KEY.js"></script>
+  <script>
+  if (!('STRIPE_PUBLISHABLE_KEY' in this)) {
+    alert('Please create ./STRIPE_PUBLISHABLE_KEY.js with the following:\n\nvar STRIPE_PUBLISHABLE_KEY = "pk_[...]";');
+  }
+  </script>
 </head>
 <body>
 
@@ -31,6 +36,7 @@ var total = document.querySelector('#total');
 var json = document.querySelector('#json');
 
 function drawBasketItem(item) {
+  console.debug('Drawing basket UI for %s', item.id);
   var li = document.createElement('li')
     , btn = document.createElement('button')
     , div = document.createElement('div');
@@ -38,6 +44,7 @@ function drawBasketItem(item) {
   li.appendChild(btn);
   btn.innerHTML = 'remove';
   btn.onclick = function() {
+    console.info('Remove button clicked for %s', item.id);
     cart.remove(item);
     setTimeout(addRandomCart, 1500);
   };
@@ -47,16 +54,19 @@ function drawBasketItem(item) {
 }
 
 function removeBasketItem(item) {
+  console.debug('Removing basket UI for %s', item.id);
   var container = item.element.parentNode.parentNode;
   container.removeChild(item.element.parentNode);
 }
 
 
 function updateBasketItem(item) {
+  console.debug('Updating UI for %s', item.id);
   item.element.innerHTML = '<b>Product #' + item.id + '</b><br>' + item.price + ' &times; ' + item.quantity + ' = ' + toDollars(item.subtotal);
 }
 
 function purchase() {
+  console.info('Opening stripe checkout');
   StripeCheckout.open({
     key: STRIPE_PUBLISHABLE_KEY, // enter here or create a script matching the placeholder in <head> above
     address: true,
@@ -76,27 +86,40 @@ function toDollars(amt) {
   return '$' + (amt / 100).toFixed(2);
 }
 
-function addRandomCart() {
-  cart.add({ price: Math.ceil(Math.random()*1000), quantity: Math.ceil(Math.random()*10)+1 });
+function addRandomCart(additions) {
+  var items = [];
+  for (var i=0; i < additions; i++) {
+    var item = new Cart.Item({ price: Math.ceil(Math.random()*1000), quantity: Math.ceil(Math.random()*10)+1 });
+    console.info('Adding new item %s', item.id);
+    items.push(item);
+  }
+  cart.add(items);
 }
 
-for (var i=0; i < 5; i++) {
-  addRandomCart();
-}
+addRandomCart(5);
 
 // setInterval(addRandomCart, 5000);
 
+function cartItemEvent(evtName, handler) {
+  cart.on(evtName, function(item) {
+    console.log('Cart event -> %s for %s', evtName, item.id);
+    handler(item);
+  });
+}
 
-cart.on('item:add', drawBasketItem);
-cart.on('item:remove', removeBasketItem);
-cart.on('item:change', updateBasketItem);
+cartItemEvent('item:add', drawBasketItem);
+cartItemEvent('item:remove', removeBasketItem);
+cartItemEvent('item:change', updateBasketItem);
 
-cart.on('change', function() {
+cart.on('count', function() {
+  console.log('Cart event -> count');
   items.innerHTML = cart.count + ' items in cart';
   json.innerHTML = JSON.stringify(cart, null, 2);
 });
 cart.on('total', function() {
+  console.log('Cart event -> total');
   total.innerHTML = toDollars(cart.total);
+  console.info('Total updated to %s', total.innerHTML);
 });
 </script>
 </body>
