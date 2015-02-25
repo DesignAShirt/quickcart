@@ -17,7 +17,7 @@
       <div id="items"></div>
       <ul id="basket"></ul>
       <div id="total"></div>
-      <button id="customButton" onclick="purchase();">Purchase</button>
+      <button id="customButton" onclick="cart.purchase();">Purchase</button>
     </td>
     <td>
       <pre id="json"></pre>
@@ -29,7 +29,28 @@
 <script src="../lib/cart.js"></script>
 <script src="https://checkout.stripe.com/v2/checkout.js"></script>
 <script>
-var cart = new Cart();
+function stripePaymentDriver(cart, callback) {
+  console.info('Opening stripe checkout');
+  StripeCheckout.open({
+    key: STRIPE_PUBLISHABLE_KEY, // enter here or create a script matching the placeholder in <head> above
+    address: true,
+    amount: cart.total,
+    currency: 'usd',
+    name: 'My Company, LLC',
+    image: 'https://stripe.com/img/documentation/checkout/marketplace.png',
+    description: cart.count + ' widgets',
+    panelLabel: 'Checkout',
+    token: function(token) {
+      console.info('Stripe token returned', token);
+      cart.options.meta.stripe = token.id;
+      callback(null);
+    }
+  });
+}
+
+var cart = new Cart({
+  paymentDriver: stripePaymentDriver
+});
 var basket = document.querySelector('#basket');
 var items = document.querySelector('#items');
 var total = document.querySelector('#total');
@@ -63,23 +84,6 @@ function removeBasketItem(item) {
 function updateBasketItem(item) {
   console.debug('Updating UI for %s', item.id);
   item.element.innerHTML = '<b>Product #' + item.id + '</b><br>' + item.price + ' &times; ' + item.quantity + ' = ' + toDollars(item.subtotal);
-}
-
-function purchase() {
-  console.info('Opening stripe checkout');
-  StripeCheckout.open({
-    key: STRIPE_PUBLISHABLE_KEY, // enter here or create a script matching the placeholder in <head> above
-    address: true,
-    amount: cart.total,
-    currency: 'usd',
-    name: 'My Company, LLC',
-    image: 'https://stripe.com/img/documentation/checkout/marketplace.png',
-    description: cart.count + ' widgets',
-    panelLabel: 'Checkout',
-    token: function(token) {
-      console.info('Stripe token returned', token);
-    }
-  });
 }
 
 function toDollars(amt) {
