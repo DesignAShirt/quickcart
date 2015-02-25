@@ -2,6 +2,7 @@
 # Logs
 logs
 *.log
+dist
 
 # Runtime data
 pids
