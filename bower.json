@@ -1,9 +1,8 @@
 {
   "name": "cart",
   "version": "0.0.0",
-  "dependencies": {},
-  "devDependencies": {
-    
-  }
+  "dependencies": {
+    "eventemitter2": "~0.4.14"
+  },
+  "devDependencies": {}
 }
-
