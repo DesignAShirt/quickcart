@@ -30,3 +30,5 @@ node_modules
 .lock-wscript
 bower_components
 test.html
+
+examples/STRIPE_PUBLISHABLE_KEY.js
