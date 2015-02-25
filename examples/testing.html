@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+  <script src="STRIPE_PUBLISHABLE_KEY.js"></script>
+</head>
+<body>
+
+<table style="width:100%;" border="1">
+  <tr>
+    <td width="50%" valign="top">
+      <div id="items"></div>
+      <ul id="basket"></ul>
+      <div id="total"></div>
+      <button id="customButton" onclick="purchase();">Purchase</button>
+    </td>
+    <td>
+      <pre id="json"></pre>
+    </td>
+  </tr>
+</table>
+
+<script src="../bower_components/eventemitter2/lib/eventemitter2.js"></script>
+<script src="../lib/cart.js"></script>
+<script src="https://checkout.stripe.com/v2/checkout.js"></script>
+<script>
+var cart = new Cart();
+var basket = document.querySelector('#basket');
+var items = document.querySelector('#items');
+var total = document.querySelector('#total');
+var json = document.querySelector('#json');
+
+function drawBasketItem(item) {
+  var li = document.createElement('li')
+    , btn = document.createElement('button')
+    , div = document.createElement('div');
+  li.appendChild(div);
+  li.appendChild(btn);
+  btn.innerHTML = 'remove';
+  btn.onclick = function() {
+    cart.remove(item);
+    setTimeout(addRandomCart, 1500);
+  };
+  item.element = div;
+  updateBasketItem(item);
+  basket.appendChild(li);
+}
+
+function removeBasketItem(item) {
+  var container = item.element.parentNode.parentNode;
+  container.removeChild(item.element.parentNode);
+}
+
+
+function updateBasketItem(item) {
+  item.element.innerHTML = '<b>Product #' + item.id + '</b><br>' + item.price + ' &times; ' + item.quantity + ' = ' + toDollars(item.subtotal);
+}
+
+function purchase() {
+  StripeCheckout.open({
+    key: STRIPE_PUBLISHABLE_KEY, // enter here or create a script matching the placeholder in <head> above
+    address: true,
+    amount: cart.total,
+    currency: 'usd',
+    name: 'My Company, LLC',
+    image: 'https://stripe.com/img/documentation/checkout/marketplace.png',
+    description: cart.count + ' widgets',
+    panelLabel: 'Checkout',
+    token: function(token) {
+      console.info('Stripe token returned', token);
+    }
+  });
+}
+
+function toDollars(amt) {
+  return '$' + (amt / 100).toFixed(2);
+}
+
+function addRandomCart() {
+  cart.add({ price: Math.ceil(Math.random()*1000), quantity: Math.ceil(Math.random()*10)+1 });
+}
+
+for (var i=0; i < 5; i++) {
+  addRandomCart();
+}
+
+// setInterval(addRandomCart, 5000);
+
+
+cart.on('item:add', drawBasketItem);
+cart.on('item:remove', removeBasketItem);
+cart.on('item:change', updateBasketItem);
+
+cart.on('change', function() {
+  items.innerHTML = cart.count + ' items in cart';
+  json.innerHTML = JSON.stringify(cart, null, 2);
+});
+cart.on('total', function() {
+  total.innerHTML = toDollars(cart.total);
+});
+</script>
+</body>
+</html>
