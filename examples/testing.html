@@ -11,19 +11,28 @@
 </head>
 <body>
 
-<table style="width:100%;" border="1">
+<table id="cartUI" style="width:100%;" border="1">
   <tr>
     <td width="50%" valign="top">
-      <div id="items"></div>
-      <ul id="basket"></ul>
-      <div id="total"></div>
       <button id="customButton" onclick="cart.purchase();">Purchase</button>
+      <button onclick="addRandomCart();">Add item to cart</button>
+      <button onclick="cart.clear();">Empty cart</button>
+      <ul id="basket"></ul>
+      <div>
+        <span id="items"></span> --
+        <span id="total"></span>
+      </div>
     </td>
     <td>
       <pre id="json"></pre>
     </td>
   </tr>
 </table>
+
+<div id="thanksUI" style="display:none;">
+  <h1>Thanks for the order!</h1>
+  <button onclick="show('basket');">Place another</button>
+</div>
 
 <script src="../bower_components/eventemitter2/lib/eventemitter2.js"></script>
 <script src="../lib/cart.js"></script>
@@ -43,7 +52,11 @@ function stripePaymentDriver(cart, callback) {
     token: function(token) {
       console.info('Stripe token returned', token);
       cart.options.meta.stripe = token.id;
-      callback(null);
+      callback(null, true);
+    },
+    closed: function() {
+      callback(new Error('some async err'));
+      // callback(null, false);
     }
   });
 }
@@ -51,10 +64,25 @@ function stripePaymentDriver(cart, callback) {
 var cart = new Cart({
   paymentDriver: stripePaymentDriver
 });
+var cartUI = document.querySelector('#cartUI');
+var thanksUI = document.querySelector('#thanksUI');
 var basket = document.querySelector('#basket');
 var items = document.querySelector('#items');
 var total = document.querySelector('#total');
 var json = document.querySelector('#json');
+
+function show(page) {
+  cartUI.style.display =
+  thanksUI.style.display = 'none';
+  switch (page) {
+    case 'basket':
+      cartUI.style.display = 'block';
+    break;
+    case 'thanks':
+      thanksUI.style.display = 'block';
+    break;
+  }
+}
 
 function drawBasketItem(item) {
   console.debug('Drawing basket UI for %s', item.id);
@@ -67,7 +95,6 @@ function drawBasketItem(item) {
   btn.onclick = function() {
     console.info('Remove button clicked for %s', item.id);
     cart.remove(item);
-    setTimeout(addRandomCart, 1500);
   };
   item.element = div;
   updateBasketItem(item);
@@ -91,6 +118,7 @@ function toDollars(amt) {
 }
 
 function addRandomCart(additions) {
+  additions = additions || 1;
   var items = [];
   for (var i=0; i < additions; i++) {
     var item = new Cart.Item({ price: Math.ceil(Math.random()*1000), quantity: Math.ceil(Math.random()*10)+1 });
@@ -114,6 +142,9 @@ function cartItemEvent(evtName, handler) {
 cartItemEvent('item:add', drawBasketItem);
 cartItemEvent('item:remove', removeBasketItem);
 cartItemEvent('item:change', updateBasketItem);
+cartItemEvent('item:error', function(err){ console.error(err); });
+
+cart.on('error', function(err){ console.error(err); });
 
 cart.on('count', function() {
   console.log('Cart event -> count');
@@ -124,6 +155,16 @@ cart.on('total', function() {
   console.log('Cart event -> total');
   total.innerHTML = toDollars(cart.total);
   console.info('Total updated to %s', total.innerHTML);
+});
+cart.on('purchase', function(successful) {
+  console.log('Cart event -> purchase');
+  if (successful) {
+    show('thanks');
+    cart.clear();
+  }
+  else {
+    console.warn('Purchase was not successful; Cancelled by the user');
+  }
 });
 </script>
 </body>
