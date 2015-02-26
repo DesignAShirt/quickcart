@@ -55,8 +55,7 @@ function stripePaymentDriver(cart, callback) {
       callback(null, true);
     },
     closed: function() {
-      callback(new Error('some async err'));
-      // callback(null, false);
+      callback(null, false);
     }
   });
 }
