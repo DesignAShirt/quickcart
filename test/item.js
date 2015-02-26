@@ -23,18 +23,21 @@ describe('Item', function() {
     it('should accept obj as arg', function() {
       var value = 'world'
         , id = 1
-        , price = 2
-        , signature = 'three'
+        , product = 2
+        , price = 3
+        , signature = 'four'
         , item;
       assert.doesNotThrow(function() {
         item = new Item({
           id: id,
+          product: product,
           price: price,
           signature: signature,
           properties: { hello: value },
         });
       });
       assert.strictEqual(item.id, id);
+      assert.strictEqual(item.product, product);
       assert.strictEqual(item.price, price);
       assert.strictEqual(item.signature, signature);
       assert.strictEqual(item.property('hello'), value);

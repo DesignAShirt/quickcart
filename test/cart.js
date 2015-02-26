@@ -157,14 +157,14 @@ describe('Cart', function() {
   describe('#add()', function(){
     it('should accept adding Item or object literals', function() {
       var item1 = new Cart.Item()
-        , item2 = { id: 'item2' }
+        , item2 = { product: 'item2' }
         , cart = new Cart();
       cart.add(item1);
       assert.strictEqual(cart._items[0], item1);
       cart.add(item2);
       assert.strictEqual(cart._items[0], item1); // check both again
       assert.strictEqual(cart._items[1] instanceof Cart.Item, true);
-      assert.strictEqual(cart._items[1].id, 'item2');
+      assert.strictEqual(cart._items[1].product, 'item2');
     });
     it('should handle incorrect values', function() {
       var cart = new Cart();
@@ -235,9 +235,9 @@ describe('Cart', function() {
   });
 
   describe('#remove()', function(){
-    it('should accept removing by ref or Item.cartId', function() {
+    it('should accept removing by ref or Item.id', function() {
       var item1 = new Cart.Item()
-        , item2 = { cartId: 'item2' }
+        , item2 = { id: 'item2' }
         , cart = new Cart([item1, item2]);
       assert.strictEqual(cart._items.length, 2);
       cart.remove(item1);
@@ -311,21 +311,21 @@ describe('Cart', function() {
 
   describe('#findBy()', function(){
     it('should find items by property value', function() {
-      var item1 = new Cart.Item({ id: 'item1' })
-        , item2 = new Cart.Item({ id: 'item2' })
+      var item1 = new Cart.Item({ product: 'item1' })
+        , item2 = new Cart.Item({ product: 'item2' })
         , cart = new Cart([item1, item2]);
-      assert.strictEqual(item1, cart.findBy('id', 'item1'));
-      assert.strictEqual(item2, cart.findBy('id', 'item2'));
-      assert.strictEqual(null, cart.findBy('id', 'nonexistent'));
+      assert.strictEqual(item1, cart.findBy('product', 'item1'));
+      assert.strictEqual(item2, cart.findBy('product', 'item2'));
+      assert.strictEqual(null, cart.findBy('product', 'nonexistent'));
     });
   });
 
   describe('#find()', function(){
-    it('should find items by cartId', function() {
+    it('should find items by id', function() {
       var item1 = new Cart.Item()
-        , item2 = new Cart.Item({ cartId: 'item2' })
+        , item2 = new Cart.Item({ id: 'item2' })
         , cart = new Cart([item1, item2])
-        , autoId = item1.cartId;
+        , autoId = item1.id;
       assert.strictEqual(item1, cart.find(autoId));
       assert.strictEqual(item2, cart.find('item2'));
       assert.strictEqual(null, cart.find('nonexistent'));
@@ -398,15 +398,15 @@ describe('Cart', function() {
 
   describe('#toJSON()', function(){
     it('should convert to JSON and back', function() {
-      var item1 = new Cart.Item({ id: 'item1' })
-        , item2 = new Cart.Item({ id: 'item2' })
+      var item1 = new Cart.Item({ product: 'item1' })
+        , item2 = new Cart.Item({ product: 'item2' })
         , cart = new Cart([item1, item2])
         , cart2 = Cart.from(cart.toJSON());
 
       assert.strictEqual(cart._items.length, cart2._items.length);
-      assert.strictEqual(cart._items[0].id, cart2._items[0].id);
-      assert.deepEqual(cart.itemAt(0).id, cart2.itemAt(0).id);
-      assert.deepEqual(cart.itemAt(1).id, cart2.itemAt(1).id);
+      assert.strictEqual(cart._items[0].product, cart2._items[0].product);
+      assert.deepEqual(cart.itemAt(0).product, cart2.itemAt(0).product);
+      assert.deepEqual(cart.itemAt(1).product, cart2.itemAt(1).product);
     });
   });
 });
