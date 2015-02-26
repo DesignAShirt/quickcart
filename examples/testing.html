@@ -42,7 +42,7 @@ function stripePaymentDriver(cart, callback) {
   console.info('Opening stripe checkout');
   StripeCheckout.open({
     key: STRIPE_PUBLISHABLE_KEY, // enter here or create a script matching the placeholder in <head> above
-    address: true,
+    // address: true, // disabled to simplify dev testing
     amount: cart.total,
     currency: 'usd',
     name: 'My Company, LLC',
@@ -55,7 +55,12 @@ function stripePaymentDriver(cart, callback) {
       callback(null, true);
     },
     closed: function() {
-      callback(null, false);
+      // Stripe checkout doesn't have a way to differentiate closed -> user (cancelled)
+      // and closed -> purhcased (token) o.O
+      // For now unlock manually, which means it'll leak bc the callback is never called
+      // ...and there is not a way to detect user cancel
+      cart.lock(false);
+      // callback(null, false);
     }
   });
 }
