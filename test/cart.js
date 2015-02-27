@@ -232,6 +232,7 @@ describe('Cart', function() {
         cart.add();
       }, Error);
     });
+    it('should be optional how to handle adding duplicate products');
   });
 
   describe('#remove()', function(){
