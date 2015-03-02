@@ -1,5 +1,5 @@
-# cart
+# QuickCart
 
-[![Build Status](https://secure.travis-ci.org/blah/cart.png?branch=master)](http://travis-ci.org/blah/cart)
+[![Build Status](https://secure.travis-ci.org/designashirt/quickcart.png?branch=master)](http://travis-ci.org/designashirt/quickcart)
 
-It does this one thing really awesome! boyah!
+Clientside shopping cart/basket controller.
