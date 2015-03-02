@@ -32,12 +32,6 @@ module.exports = function(grunt) {
         dest: 'dist/<%= pkg.name %>.v<%= pkg.version %>.min.js'
       }
     },
-    jshint: {
-      options: grunt.file.readJSON('.jshintrc'),
-      lib_test: {
-        src: ['lib/{,*/}*.js']
-      }
-    },
     mochaTest: {
       test: {
         options: {
@@ -45,26 +39,15 @@ module.exports = function(grunt) {
         },
         src: ['test/*.js']
       }
-    },
-    watch: {
-      gruntfile: {
-        files: '<%= jshint.gruntfile.src %>',
-        tasks: ['jshint:gruntfile']
-      },
-      lib_test: {
-        files: '<%= jshint.lib_test.src %>',
-        tasks: ['jshint:lib_test', 'qunit']
-      }
     }
   });
 
-  
+
 
   // Default task.
-  grunt.registerTask('default', ['mochaTest', 'concat', 'uglify']);
+  grunt.registerTask('default', ['mochaTest']);
+  grunt.registerTask('test', ['mochaTest']);
 
   // Specific tasks
-  grunt.registerTask('test', ['mochaTest']);
-  grunt.registerTask('hint', ['jshint']);
-
+  grunt.registerTask('build', ['mochaTest', 'concat', 'uglify']);
 };
