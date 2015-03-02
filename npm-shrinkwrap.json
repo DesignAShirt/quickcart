@@ -1,0 +1,11 @@
+{
+  "name": "quickcart",
+  "version": "0.0.1",
+  "dependencies": {
+    "eventemitter2": {
+      "version": "0.4.14",
+      "from": "eventemitter2@>=0.4.14 <0.5.0",
+      "resolved": "https://registry.npmjs.org/eventemitter2/-/eventemitter2-0.4.14.tgz"
+    }
+  }
+}

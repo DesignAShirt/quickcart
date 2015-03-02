@@ -1,6 +1,8 @@
 {
-  "name": "cart",
-  "version": "0.0.0",
+  "name": "quickcart",
+  "version": "0.0.1",
+  "main": "quickcart.js",
+  "ignore": [],
   "dependencies": {
     "eventemitter2": "~0.4.14"
   },
