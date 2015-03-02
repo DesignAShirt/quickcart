@@ -7,7 +7,7 @@
 'use strict'
 
 var assert = require('assert')
-  , Cart = require('../lib/cart')
+  , Cart = require('../lib/cart.js')
   , Item = Cart.Item;
 
 describe('Cart', function() {
