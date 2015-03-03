@@ -1,4 +1,4 @@
-/*! quickcart - v0.0.1 - 2015-03-02
+/*! quickcart - v0.0.1 - 2015-03-03
 * Copyright (c) 2015 ; Licensed  */
 // Uses AMD or browser globals to create a module.
 
@@ -66,39 +66,39 @@
   function Item(data) {
     data = data || {};
 
-    var id, product, price, signature, properties, quantity;
-    id          = 'id' in data ? data.id : ++_uid;
-    product     = 'product' in data ? data.product : id;
-    price       = 'price' in data ? data.price : Number.MAX_VALUE;
-    quantity    = 'quantity' in data ? data.quantity : 1;
-    signature   = 'signature' in data ? data.signature : UNSIGNED_PRODUCT;
-    properties  = 'properties' in data ? data.properties : {};
+    var _id, _product, _price, _signature, _properties, _quantity;
+    _id          = 'id' in data ? data.id : ++_uid;
+    _product     = 'product' in data ? data.product : _id;
+    _price       = 'price' in data ? data.price : Number.MAX_VALUE;
+    _quantity    = 'quantity' in data ? data.quantity : 1;
+    _signature   = 'signature' in data ? data.signature : UNSIGNED_PRODUCT;
+    _properties  = 'properties' in data ? data.properties : {};
 
     Object.defineProperties(this, {
       id: {
         get: function() {
-          return id;
+          return _id;
         }
       },
 
       product: {
         get: function() {
-          return product;
+          return _product;
         }
       },
 
       price: {
         get: function() {
-          return price;
+          return _price;
         },
         set: function(value) {
           if (this.locked) {
             throw new Error('Cannot set price because cart is locked');
           }
-          if (signature !== UNSIGNED_PRODUCT) {
+          if (_signature !== UNSIGNED_PRODUCT) {
             throw new Error('Cannot modify price of signed product');
           }
-          price = value;
+          _price = value;
           this.trigger('price', value);
           this.trigger('total');
           this.trigger('change');
@@ -107,19 +107,19 @@
 
       signature: {
         get: function() {
-          return signature;
+          return _signature;
         }
       },
 
       quantity: {
         get: function() {
-          return quantity;
+          return _quantity;
         },
         set: function(value) {
           if (this.locked) {
             throw new Error('Cannot set quantity because cart is locked');
           }
-          quantity = value;
+          _quantity = value;
           this.trigger('quantity', value);
           this.trigger('total');
           this.trigger('change');
@@ -128,7 +128,12 @@
 
       properties: {
         get: function() {
-          return Object.create(properties);
+          var obj = {};
+          for (var k in _properties) {
+            obj[k] = _properties[k];
+          }
+          Object.freeze(obj);
+          return obj;
         }
       },
 
@@ -136,13 +141,13 @@
         value: function(key, value) {
           switch (arguments.length) {
             case 1:
-              return properties[key];
+              return _properties[key];
             case 2:
               if (this.locked) {
                 throw new Error('Cannot set property because cart is locked');
               }
-              var prev = properties[key];
-              properties[key] = value;
+              var prev = _properties[key];
+              _properties[key] = value;
               this.trigger('property:change', key, value, prev);
               this.trigger('change');
               return this;
