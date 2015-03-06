@@ -71,20 +71,27 @@ describe('Cart', function() {
         cart.options.store = 'something else';
       }, Error)
     });
-  });
 
-  describe('#meta', function(){
-    it('should have mutable options.meta', function() {
-      var storeName = 'test'
-        , options = { store: storeName }
-        , metaValue = 'bar'
-        , cart = new Cart(options);
-      cart.options.meta.foo = metaValue;
-      assert.strictEqual(cart.options.meta.foo, metaValue);
+    // TODO: all the options
+
+    describe('#meta', function(){
+      it('should have mutable options.meta', function() {
+        var storeName = 'test'
+          , options = { store: storeName }
+          , metaValue = 'bar'
+          , cart = new Cart(options);
+        cart.options.meta.foo = metaValue;
+        assert.strictEqual(cart.options.meta.foo, metaValue);
+      });
     });
   });
 
+
   describe('#count', function(){
+    it('should have a count', function() {
+      assert.strictEqual(new Cart().count, 0);
+      assert.strictEqual(new Cart([{ quantity: 2 }]).count, 1);
+    });
     it('should have a read only count accessor', function() {
       var item1 = new Cart.Item()
         , item2 = new Cart.Item()
@@ -96,6 +103,26 @@ describe('Cart', function() {
     });
   });
 
+  describe('#quantity', function(){
+    it('should have a quantity', function() {
+      assert.strictEqual(new Cart().quantity, 0);
+    });
+    it('should return total quantity of all items', function() {
+      assert.strictEqual(new Cart([{ quantity: 2 }]).quantity, 2);
+    });
+    it('should ignore uncountable items', function() {
+      var item1 = new Item({ quantity: 2 })
+        , item2 = new Item()
+        , item3 = new Item({ countable: false });
+      assert.strictEqual(new Cart([ item1 ]).quantity, 2);
+      assert.strictEqual(new Cart([ item2 ]).quantity, 1);
+      assert.strictEqual(new Cart([ item3 ]).quantity, 0);
+      assert.strictEqual(new Cart([ item1, item2 ]).quantity, 3);
+      assert.strictEqual(new Cart([ item1, item2, item3 ]).quantity, 3);
+    });
+  });
+
+
   describe('#total', function(){
     it('should have a read only total accessor', function() {
       var item1 = new Cart.Item({ price: 100 })
@@ -105,6 +132,19 @@ describe('Cart', function() {
       assert.throws(function() {
         cart.total = 1;
       }, Error);
+    });
+  });
+
+  describe('#taxableTotal', function(){
+    it('should return sum of all items that are taxable only', function() {
+      var item1 = new Item({ price: 100 })
+        , item2 = new Item({ price: 200 })
+        , item3 = new Item({ price: 100, taxable: false });
+      assert.strictEqual(new Cart([ item1 ]).taxableTotal, 100);
+      assert.strictEqual(new Cart([ item2 ]).taxableTotal, 200);
+      assert.strictEqual(new Cart([ item3 ]).taxableTotal, 0);
+      assert.strictEqual(new Cart([ item1, item2 ]).taxableTotal, 300);
+      assert.strictEqual(new Cart([ item1, item2, item3 ]).taxableTotal, 300);
     });
   });
 
@@ -154,6 +194,22 @@ describe('Cart', function() {
       assert.strictEqual(cart.itemAt(1), item2);
     });
   });
+
+  describe('#trigger()', function(){
+    it('should allow events to be triggered', function(done) {
+      var item = new Item();
+      item.on('test event', function() {
+        done();
+      });
+      item.trigger('test event');
+    });
+  });
+
+  describe('#_watchItem', function(){
+    it('should listen to item events');
+  });
+
+
 
   describe('#add()', function(){
     it('should accept adding Item or object literals', function() {
@@ -334,6 +390,24 @@ describe('Cart', function() {
     });
   });
 
+  describe('#itemsBy()', function(){
+    it('should filter items by property and value', function() {
+      assert.strictEqual(new Cart([ { product: 'hello' }, { product: 'hello2' } ]).itemsBy('product', 'hello').length, 1);
+      assert.strictEqual(new Cart([ { taxable: true }, { taxable: false } ]).itemsBy('taxable').length, 1);
+    });
+  });
+
+  describe('#tallyBy()', function(){
+    it('should aggregate by property and value', function() {
+      assert.strictEqual(new Cart([ { price: 100, product: 'hello' }, { product: 'hello2', price: 100 } ]).tallyBy('price', 'product', 'hello'), 100);
+      assert.strictEqual(new Cart([ { taxable: true, price: 100 }, { taxable: false, price: 100 } ]).tallyBy('price', 'taxable'), 100);
+    });
+    it('should aggregate all if excluded', function() {
+      assert.strictEqual(new Cart([ { price: 100, product: 'hello' }, { product: 'hello2', price: 100 } ]).tallyBy('price'), 200);
+      assert.strictEqual(new Cart([ { taxable: true, price: 100 }, { taxable: false, price: 100 } ]).tallyBy('price'), 200);
+    });
+  });
+
   describe('#clear()', function(){
     it('should allow clearing items', function() {
       var item1 = new Cart.Item()
@@ -349,52 +423,6 @@ describe('Cart', function() {
       assert.throws(function() {
         cart.clear();
       }, Error);
-    });
-  });
-
-  describe('#purchase()', function(){
-    it('should error if cart empty (default options.paymentDriver remains)', function(done) {
-      var cart = new Cart().on('error', function(err) {
-        assert.strictEqual(err instanceof Error, true);
-        done();
-      });
-      cart.purchase();
-      assert.strictEqual(cart.locked, false);
-    });
-    it('should error if no paymentDriver passed', function(done) {
-      var cart = new Cart([{}]).on('error', function(err) {
-        assert.strictEqual(err instanceof Error, true);
-        done();
-      });
-      cart.purchase();
-      assert.strictEqual(cart.locked, false);
-    });
-    it('should lock the cart and items', function() {
-      var item1 = new Cart.Item()
-        , item2 = new Cart.Item()
-        , cart = new Cart([item1, item2], { paymentDriver: successfulPaymentDriver });
-      cart.purchase();
-      assert.strictEqual(cart.locked, true);
-      assert.strictEqual(cart._items[0].locked, true);
-      assert.strictEqual(cart._items[1].locked, true);
-    });
-    it('should not allow purchasing if locked', function() {
-      var cart = new Cart([{}]);
-      cart.lock(true);
-      assert.throws(function() {
-        cart.purchase();
-      }, Error);
-      assert.strictEqual(cart.locked, true); // should not auto unlock
-    });
-    it('should accept a callback', function(done) {
-      var item1 = new Cart.Item()
-        , item2 = new Cart.Item()
-        , cart = new Cart([item1, item2], { paymentDriver: successfulPaymentDriver });
-      cart.purchase(function(err, successful) {
-        assert.ifError(err);
-        assert.strictEqual(successful, true);
-        done();
-      });
     });
   });
 
