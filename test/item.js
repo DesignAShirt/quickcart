@@ -76,7 +76,15 @@ describe('Item', function() {
       assert.strictEqual(new Item().price, Number.MAX_VALUE);
     });
     it('should support JIT price via function', function() {
-      assert.strictEqual(new Item({ price: function() { return 100; } }).price, 100);
+      var priceHandler = function() { return 100; };
+      assert.strictEqual(new Item({ price: priceHandler }).price, 100);
+    });
+  });
+
+  describe('#priceHandler', function(){
+    it('should support expose access to price handling function', function() {
+      var priceHandler = function() { return 100; };
+      assert.strictEqual(new Item({ price: priceHandler }).priceHandler, priceHandler);
     });
   });
 
@@ -226,6 +234,10 @@ describe('Item', function() {
     it('should support toJSON', function() {
       var item = new Item();
       assert.strictEqual(item.product, item.toJSON().product);
+
+      var priceHandler = function priceHandler() { return 100; };
+      var item2 = new Item({ price: priceHandler });
+      assert.strictEqual(priceHandler.name, item2.toJSON().price);
     });
   });
 });
