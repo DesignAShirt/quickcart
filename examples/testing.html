@@ -5,7 +5,7 @@
 </head>
 <body>
 
-<table id="cartUI" style="width:100%;" border="1">
+<table style="width:100%;" border="1">
   <tr>
     <td width="50%" valign="top">
       <button id="customButton" onclick="cart.purchase();">Purchase</button>
@@ -23,34 +23,14 @@
   </tr>
 </table>
 
-<div id="thanksUI" style="display:none;">
-  <h1>Thanks for the order!</h1>
-  <button onclick="show('basket');">Place another</button>
-</div>
-
 <script src="../bower_components/eventemitter2/lib/eventemitter2.js"></script>
 <script src="../lib/cart.js"></script>
 <script>
 var cart = new Cart();
-var cartUI = document.querySelector('#cartUI');
-var thanksUI = document.querySelector('#thanksUI');
 var basket = document.querySelector('#basket');
 var items = document.querySelector('#items');
 var total = document.querySelector('#total');
 var json = document.querySelector('#json');
-
-function show(page) {
-  cartUI.style.display =
-  thanksUI.style.display = 'none';
-  switch (page) {
-    case 'basket':
-      cartUI.style.display = 'block';
-    break;
-    case 'thanks':
-      thanksUI.style.display = 'block';
-    break;
-  }
-}
 
 function drawBasketItem(item) {
   console.debug('Drawing basket UI for %s', item.id);
@@ -123,16 +103,6 @@ cart.on('total', function() {
   console.log('Cart event -> total');
   total.innerHTML = toDollars(cart.total);
   console.info('Total updated to %s', total.innerHTML);
-});
-cart.on('purchase', function(successful) {
-  console.log('Cart event -> purchase');
-  if (successful) {
-    show('thanks');
-    cart.clear();
-  }
-  else {
-    console.warn('Purchase was not successful; Cancelled by the user');
-  }
 });
 </script>
 </body>
