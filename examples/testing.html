@@ -2,12 +2,6 @@
 <html>
 <head>
   <title></title>
-  <script src="STRIPE_PUBLISHABLE_KEY.js"></script>
-  <script>
-  if (!('STRIPE_PUBLISHABLE_KEY' in this)) {
-    alert('Please create ./STRIPE_PUBLISHABLE_KEY.js with the following:\n\nvar STRIPE_PUBLISHABLE_KEY = "pk_[...]";');
-  }
-  </script>
 </head>
 <body>
 
@@ -36,38 +30,8 @@
 
 <script src="../bower_components/eventemitter2/lib/eventemitter2.js"></script>
 <script src="../lib/cart.js"></script>
-<script src="https://checkout.stripe.com/v2/checkout.js"></script>
 <script>
-function stripePaymentDriver(cart, callback) {
-  console.info('Opening stripe checkout');
-  StripeCheckout.open({
-    key: STRIPE_PUBLISHABLE_KEY, // enter here or create a script matching the placeholder in <head> above
-    // address: true, // disabled to simplify dev testing
-    amount: cart.total,
-    currency: 'usd',
-    name: 'My Company, LLC',
-    image: 'https://stripe.com/img/documentation/checkout/marketplace.png',
-    description: cart.count + ' widgets',
-    panelLabel: 'Checkout',
-    token: function(token) {
-      console.info('Stripe token returned', token);
-      cart.options.meta.stripe = token.id;
-      callback(null, true);
-    },
-    closed: function() {
-      // Stripe checkout doesn't have a way to differentiate closed -> user (cancelled)
-      // and closed -> purhcased (token) o.O
-      // For now unlock manually, which means it'll leak bc the callback is never called
-      // ...and there is not a way to detect user cancel
-      cart.lock(false);
-      // callback(null, false);
-    }
-  });
-}
-
-var cart = new Cart({
-  paymentDriver: stripePaymentDriver
-});
+var cart = new Cart();
 var cartUI = document.querySelector('#cartUI');
 var thanksUI = document.querySelector('#thanksUI');
 var basket = document.querySelector('#basket');
