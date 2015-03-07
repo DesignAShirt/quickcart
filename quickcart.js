@@ -1,4 +1,4 @@
-/*! quickcart - v0.0.1 - 2015-03-03
+/*! quickcart - v0.0.1 - 2015-03-06
 * Copyright (c) 2015 ; Licensed  */
 // Uses AMD or browser globals to create a module.
 
@@ -66,18 +66,47 @@
   function Item(data) {
     data = data || {};
 
-    var _id, _product, _price, _signature, _properties, _quantity;
-    _id          = 'id' in data ? data.id : ++_uid;
-    _product     = 'product' in data ? data.product : _id;
-    _price       = 'price' in data ? data.price : Number.MAX_VALUE;
-    _quantity    = 'quantity' in data ? data.quantity : 1;
-    _signature   = 'signature' in data ? data.signature : UNSIGNED_PRODUCT;
-    _properties  = 'properties' in data ? data.properties : {};
+    var _id, _product, _price, _signature, _properties, _quantity, _shippable, _countable, _taxable, _group;
+    _id           = 'id' in data ? data.id : ++_uid;
+    _product      = 'product' in data ? data.product : _id;
+    _price        = 'price' in data ? data.price : Number.MAX_VALUE;
+    _quantity     = 'quantity' in data ? data.quantity : 1;
+    _signature    = 'signature' in data ? data.signature : UNSIGNED_PRODUCT;
+    _properties   = 'properties' in data ? data.properties : {};
+    _group        = 'group' in data ? data.group : null;
+
+    _shippable    = 'shippable' in data ? !!data.shippable : true;
+    _countable    = 'countable' in data ? !!data.countable : true;
+    _taxable      = 'taxable' in data ? !!data.taxable : true;
 
     Object.defineProperties(this, {
       id: {
         get: function() {
           return _id;
+        }
+      },
+
+      shippable: {
+        get: function() {
+          return _shippable;
+        }
+      },
+
+      countable: {
+        get: function() {
+          return _countable;
+        }
+      },
+
+      taxable: {
+        get: function() {
+          return _taxable;
+        }
+      },
+
+      group: {
+        get: function() {
+          return _group;
         }
       },
 
@@ -89,7 +118,8 @@
 
       price: {
         get: function() {
-          return _price;
+          // FIXME: prevent calls to cart.total/etc from within price handler?  possible? will inf. loop
+          return typeof _price === 'function' ? _price.call(this) : _price;
         },
         set: function(value) {
           if (this.locked) {
@@ -113,16 +143,21 @@
 
       quantity: {
         get: function() {
-          return _quantity;
+          return this.countable ? _quantity : 0;
         },
         set: function(value) {
           if (this.locked) {
             throw new Error('Cannot set quantity because cart is locked');
           }
-          _quantity = value;
-          this.trigger('quantity', value);
-          this.trigger('total');
-          this.trigger('change');
+          if (this.countable) {
+            _quantity = value;
+            this.trigger('quantity', value);
+            this.trigger('total');
+            this.trigger('change');
+          }
+          else {
+            this.trigger('error', new Error('Cannot set quantity because this item is not countable'));
+          }
         }
       },
 
@@ -159,7 +194,13 @@
 
       subtotal: {
         get: function() {
-          return this.price * this.quantity;
+          // if is not countable, the price is returned directly
+          if (this.countable) {
+            return this.price * this.quantity;
+          }
+          else {
+            return this.price;
+          }
         }
       },
     });
@@ -201,6 +242,10 @@
     return {
         product: this.product
       , price: this.price
+      , group: this.group
+      , taxable: this.taxable
+      , countable: this.countable
+      , shippable: this.shippable
       , quantity: this.quantity
       , signature: this.signature
       , subtotal: this.subtotal
@@ -229,6 +274,9 @@
       //  - error: do noting and emit an error
       //  - allow: allow dupe items to exist
       dupeItemMode: 'error',
+
+      // if a quantity is set to zero, the item is removed
+      removeOnZeroQuantity: true,
 
       // create a signature for current cart
       signer: function(cart) {
@@ -261,15 +309,25 @@
 
     Object.defineProperty(this, 'total', {
       get: function() {
-        return !this._items.length ? 0 : this._items.reduce(function(prev, cur) {
-          return prev + cur.subtotal;
-        }, 0);
+        return this.tallyBy('subtotal');
+      }
+    });
+
+    Object.defineProperty(this, 'taxableTotal', {
+      get: function() {
+        return this.tallyBy('subtotal', 'taxable');
       }
     });
 
     Object.defineProperty(this, 'count', {
       get: function() {
-        return this._items.length;
+        return this.itemsBy('countable').length;
+      }
+    });
+
+    Object.defineProperty(this, 'quantity', {
+      get: function() {
+        return this.tallyBy('quantity', 'countable');
       }
     });
 
@@ -335,6 +393,13 @@
       .on('change', function() {
         _this.trigger('item:change', this);
         _this.trigger('change');
+      })
+      .on('quantity', function() {
+        _this.trigger('item:quantity', this);
+        _this.trigger('quantity');
+        if (_this.removeOnZeroQuantity && 0 === this.quantity) {
+          _this.remove(this);
+        }
       })
       .on('total', function() {
         _this.trigger('item:total', this);
@@ -432,51 +497,28 @@
     return this.findBy('id', id);
   };
 
+  Cart.prototype.itemsBy = function(property, value) {
+    var compareValue = void 0 !== value;
+    return void 0 === property && !compareValue ? this._items : this._items.filter(function(element) {
+      var v = element[property];
+      return compareValue ? v === value : !!v;
+    });
+  };
+
+  Cart.prototype.tallyBy = function(aggregate, property, value) {
+    var total = 0
+      , filtered = this.itemsBy(property, value);
+    if (filtered.length) {
+      total = filtered.reduce(function(prev, cur) {
+        return prev + cur[aggregate];
+      }, 0);
+    }
+    return total;
+  };
+
   Cart.prototype.clear = function() {
     Cart.prototype.remove.apply(this, this._items);
     this.trigger('clear');
-    return this;
-  };
-
-  Cart.prototype.purchase = function(callback) {
-    if (this.locked) {
-      throw new Error('Cannot purchase because cart is locked');
-    }
-    var _this = this
-      , wrappedCallback;
-    callback = callback || function(){};
-    wrappedCallback = function() {
-      callback.apply(this, arguments);
-      callback = function() {
-        _this.trigger('error', new Error('Purchase callback already called'));
-      };
-    }
-    if (this._items.length) {
-      this.lock(true);
-      this.trigger('purchasing');
-      try {
-        this.options.paymentDriver(this, function(err, success) {
-          _this.lock(false);
-          wrappedCallback(err, success);
-          if (err) {
-            _this.trigger('error', err);
-            return;
-          }
-          _this.trigger('purchase', success);
-        });
-      }
-      catch(err) {
-        this.trigger('error', new Error('Payment driver lead to error'));
-        this.lock(false);
-        wrappedCallback(err);
-        throw err;
-      }
-    }
-    else {
-      var emptyErr = new Error('Cannot purchase because cart is empty');
-      wrappedCallback(emptyErr);
-      this.trigger('error', emptyErr);
-    }
     return this;
   };
 
@@ -486,12 +528,15 @@
       , user: this.options.user
       , meta: this.options.meta
       , total: this.total
+      , taxableTotal: this.taxableTotal
+      , count: this.count
+      , quantity: this.quantity
       , signature: this.signature
       , items: this._items.map(Function.prototype.call, Item.prototype.toJSON)
     };
   };
 
-  Cart.from = function(json, signer, paymentDriver) {
+  Cart.from = function(json, signer) {
     var options = {
       store: json.store,
       user: json.user,
@@ -502,12 +547,6 @@
     }
     else if (json.signer) {
       options.signer = json.signer;
-    }
-    if (paymentDriver) {
-      options.paymentDriver = paymentDriver;
-    }
-    else if (json.paymentDriver) {
-      options.paymentDriver = json.paymentDriver;
     }
     return new Cart(json.items, options);
   };
