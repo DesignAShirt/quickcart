@@ -241,3 +241,15 @@ describe('Item', function() {
     });
   });
 });
+
+describe('Item.effectsCount', function() {
+  it('should return true if an item would change the cart count');
+});
+
+describe('Item.effectsTotal', function() {
+  it('should return true if an item would change the total of the cart');
+});
+
+describe('Item.effectsQuantity', function() {
+  it('should return true if an item would change the quantity of the cart');
+});

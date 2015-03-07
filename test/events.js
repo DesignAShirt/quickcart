@@ -17,3 +17,5 @@ describe('Cart', function() {
 describe('Item', function() {
   it('should emit events for things when stuff happens');
 });
+
+// check if add/remove conditionally fires all events based on whether something actually happened
