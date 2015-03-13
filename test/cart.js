@@ -133,6 +133,11 @@ describe('Cart', function() {
         cart.total = 1;
       }, Error);
     });
+
+    it('should give the correct total with price handlers');
+    // FIXME: right now price handlers get called numerous times with every change. could it be related to _watchItem being called multiple times if dupeItemMode is set to add maybe?
+    // it seems related to rendering.  each time the price is needed, it triggers another call to pricehandler.  memoize should probably be used on the user side if that could be problematic
+    it('should call price handlers only once per cycle');
   });
 
   describe('#taxableTotal', function(){
