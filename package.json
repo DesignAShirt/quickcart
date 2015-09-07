@@ -3,6 +3,7 @@
   "description": "Clientside shopping cart/basket controller.",
   "version": "0.0.1",
   "author": "Cory Mawhorter <cory.mawhorter@gmail.com> (http://mawhorter.net/)",
+  "main": "lib/cart.js",
   "scripts": {
     "test": "grunt test"
   },
