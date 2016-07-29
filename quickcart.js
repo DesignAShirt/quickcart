@@ -21,7 +21,7 @@
     });
   }
   else if (typeof module !== 'undefined' && module.exports && require) {
-    module.exports = factory(require('../bower_components/eventemitter2/index.js').EventEmitter2);
+    module.exports = factory(require('eventemitter2').EventEmitter2);
   }
   else {
     root.Cart = factory(root.EventEmitter2);
